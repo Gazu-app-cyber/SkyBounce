@@ -1,6 +1,6 @@
-import { loadJson, saveJson, removeKey, storageKeys } from './storage'
+import { loadJson, removeKey, saveJson, storageKeys } from './storage'
 
-const API_URL = import.meta.env.VITE_SKYBOUNCE_API_URL
+const API_URL = import.meta.env.VITE_SKYBOUNCE_API_URL || '/api'
 const API_TOKEN = import.meta.env.VITE_SKYBOUNCE_API_TOKEN
 
 const BOT_NAMES = ['Astra', 'Bolt', 'Kite', 'Nina', 'Pixel', 'Rook', 'Tico', 'Vega', 'Zuri', 'Luma']
@@ -34,6 +34,16 @@ function getLeaderboardStore() {
 
 function setLeaderboardStore(entries) {
   saveJson(storageKeys().leaderboard, entries)
+}
+
+function sortEntries(entries) {
+  return [...entries].sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score
+    }
+
+    return b.survivalMs - a.survivalMs
+  })
 }
 
 export function getWeekKey(timestamp) {
@@ -91,39 +101,7 @@ export function buildRunChecksum(payload) {
   return btoa(raw).replaceAll('=', '')
 }
 
-export async function submitScore(run) {
-  if (API_URL) {
-    return api('/leaderboard/runs', {
-      method: 'POST',
-      body: JSON.stringify(run),
-    })
-  }
-
-  const entries = getLeaderboardStore()
-  entries.push({
-    ...run,
-    id: `${run.playerId}-${run.createdAt}`,
-    weekKey: getWeekKey(run.createdAt),
-  })
-  setLeaderboardStore(entries)
-  return { ok: true, mode: 'local' }
-}
-
-function sortEntries(entries) {
-  return [...entries].sort((a, b) => {
-    if (b.score !== a.score) {
-      return b.score - a.score
-    }
-
-    return b.survivalMs - a.survivalMs
-  })
-}
-
-export async function fetchLeaderboard({ scope = 'global', playerId, playerName }) {
-  if (API_URL) {
-    return api(`/leaderboard?scope=${scope}&playerId=${playerId}`)
-  }
-
+function localLeaderboard({ scope = 'global', playerId, playerName }) {
   seedLocalLeaderboard(playerName)
   const entries = getLeaderboardStore()
   const filtered = scope === 'weekly'
@@ -138,30 +116,65 @@ export async function fetchLeaderboard({ scope = 'global', playerId, playerName 
       ...entry,
     })),
     playerRank: playerIndex >= 0 ? playerIndex + 1 : null,
-    mode: API_URL ? 'online' : 'local',
+    mode: 'local',
+  }
+}
+
+export async function submitScore(run) {
+  try {
+    return await api('/leaderboard/runs', {
+      method: 'POST',
+      body: JSON.stringify(run),
+    })
+  } catch {
+    const entries = getLeaderboardStore()
+    entries.push({
+      ...run,
+      id: `${run.playerId}-${run.createdAt}`,
+      weekKey: getWeekKey(run.createdAt),
+    })
+    setLeaderboardStore(entries)
+    return { ok: true, mode: 'local' }
+  }
+}
+
+export async function fetchLeaderboard({ scope = 'global', playerId, playerName }) {
+  try {
+    return await api(`/leaderboard?scope=${scope}&playerId=${playerId}`)
+  } catch {
+    return localLeaderboard({ scope, playerId, playerName })
+  }
+}
+
+export async function loadRemoteProfile(playerId) {
+  try {
+    const result = await api(`/profile?playerId=${encodeURIComponent(playerId)}`)
+    return result.profile ?? null
+  } catch {
+    return null
   }
 }
 
 export async function syncProfile(profile) {
-  if (API_URL) {
-    return api('/profile', {
+  try {
+    return await api('/profile', {
       method: 'PUT',
       body: JSON.stringify(profile),
     })
+  } catch {
+    return { ok: true, profile, mode: 'local' }
   }
-
-  return { ok: true, profile, mode: 'local' }
 }
 
 export async function deleteAccountData(playerId) {
-  if (API_URL) {
-    return api(`/profile/${playerId}`, {
+  try {
+    return await api(`/profile?playerId=${encodeURIComponent(playerId)}`, {
       method: 'DELETE',
     })
+  } catch {
+    removeKey(storageKeys().profile)
+    removeKey(storageKeys().leaderboard)
+    removeKey(storageKeys().seeds)
+    return { ok: true, mode: 'local' }
   }
-
-  removeKey(storageKeys().profile)
-  removeKey(storageKeys().leaderboard)
-  removeKey(storageKeys().seeds)
-  return { ok: true, mode: 'local' }
 }

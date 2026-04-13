@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MAP_SKINS } from '../gameData'
-import { deleteAccountData, syncProfile } from '../services/leaderboard'
+import { deleteAccountData, loadRemoteProfile, syncProfile } from '../services/leaderboard'
 import { purchaseProduct, restorePurchases } from '../services/platform'
 import { loadJson, saveJson, storageKeys } from '../services/storage'
 
@@ -39,6 +39,34 @@ export function usePlayerProfile() {
   useEffect(() => {
     saveJson(storageKeys().profile, profile)
   }, [profile])
+
+  useEffect(() => {
+    let cancelled = false
+
+    loadRemoteProfile(profile.playerId)
+      .then((remoteProfile) => {
+        if (cancelled || !remoteProfile) {
+          return
+        }
+
+        setProfile((current) => {
+          const merged = {
+            ...remoteProfile,
+            settings: {
+              ...remoteProfile.settings,
+              ...current.settings,
+            },
+          }
+          saveJson(storageKeys().profile, merged)
+          return merged
+        })
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
+  }, [profile.playerId])
 
   useEffect(() => {
     let cancelled = false

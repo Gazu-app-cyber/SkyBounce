@@ -1,16 +1,57 @@
-# React + Vite
+# SkyBounce
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Jogo casual mobile/web com foco em sessoes curtas, monetizacao, leaderboard e preparo para publicacao.
 
-Currently, two official plugins are available:
+## O que ja esta pronto
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- gameplay de toque com dificuldade progressiva
+- tela de derrota com reinicio, voltar ao menu e continue por anuncio
+- skins de mapa e progresso local
+- stats, persistencia e remocao de anuncios por compra unica
+- leaderboard com fallback local
+- backend serverless em `api/` para perfil e ranking
+- deploy web preparado para Vercel
 
-## React Compiler
+## Rodando localmente
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+Sem backend configurado, o app funciona com fallback local no navegador.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Backend web
+
+As funcoes serverless ficam em `api/` e usam Upstash Redis.
+
+Variaveis necessarias no deploy:
+
+```bash
+VITE_SKYBOUNCE_API_URL=/api
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
+```
+
+Endpoints:
+
+- `GET /api/health`
+- `GET /api/profile?playerId=...`
+- `PUT /api/profile`
+- `DELETE /api/profile?playerId=...`
+- `GET /api/leaderboard?scope=global|weekly&playerId=...`
+- `POST /api/leaderboard/runs`
+
+## Deploy web no Vercel
+
+1. Importe o repositorio no Vercel.
+2. Configure as variaveis do arquivo `.env.example`.
+3. Faca o deploy.
+
+O arquivo `vercel.json` ja inclui rewrite para SPA, entao rotas como `/shop`, `/leaderboard` e `/stats` continuam funcionando.
+
+## Build
+
+```bash
+npm run build
+```
