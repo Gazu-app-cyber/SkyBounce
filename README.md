@@ -1,37 +1,100 @@
 # SkyBounce
 
-Jogo casual mobile/web com foco em sessoes curtas, monetizacao, leaderboard e preparo para publicacao.
+SkyBounce e um jogo casual mobile/web reconstruido em React + Vite, com foco em partidas curtas, controles simples, monetizacao, skins, ranking e fluxo pronto para deploy web.
 
-## O que ja esta pronto
+## Stack atual
+
+- React
+- Vite
+- React Router
+- Axios
+- CSS comum
+- Vercel Functions
+- Upstash Redis
+
+## Arquitetura
+
+O projeto foi reorganizado para remover a dependencia do Base44 e manter o comportamento principal do app original.
+
+- `src/app/`: definicao das rotas
+- `src/pages/`: paginas principais do app
+- `src/components/game/`: canvas, HUD, modais e UI do jogo
+- `src/components/layout/`: shell de layout
+- `src/context/`: autenticacao e sessao
+- `src/api/`: cliente axios e chamadas da API
+- `src/hooks/`: estado derivado, perfil, audio e modais por rota
+- `src/lib/`: configuracoes do jogo e persistencia local
+- `src/styles/`: estilos globais, do jogo e dos modais
+- `api/`: backend serverless para deploy web
+
+## Rotas
+
+- `/login`: entrada/autenticacao local
+- `/`: tela principal do jogo
+- `/shop`: abre a loja
+- `/leaderboard`: abre o ranking
+- `/stats`: abre as estatisticas
+
+As rotas de modal funcionam com React Router e preservam o fluxo de voltar do navegador/dispositivo.
+
+## Funcionalidades implementadas
 
 - gameplay de toque com dificuldade progressiva
-- tela de derrota com reinicio, voltar ao menu e continue por anuncio
-- skins de mapa e progresso local
-- stats, persistencia e remocao de anuncios por compra unica
-- leaderboard com fallback local
-- backend serverless em `api/` para perfil e ranking
-- deploy web preparado para Vercel
+- sessoes rapidas com pontuacao crescente
+- tela de game over com tentar novamente, voltar ao menu e continuar por anuncio
+- skins de bola e skins de mapa
+- loja com itens, vidas extras e remocao de anuncios
+- ranking global/semanal com destaque da posicao do jogador
+- estatisticas do jogador com exclusao de conta
+- audio sintetizado via Web Audio API
+- persistencia local com sincronizacao via API quando disponivel
+- fallback local para uso sem backend configurado
 
-## Rodando localmente
+## Substituicoes do Base44
+
+O app original dependia de:
+
+- autenticacao Base44
+- entidades `PlayerProfile` e `LeaderboardEntry`
+- client SDK proprietario
+
+Nesta versao, isso foi substituido por:
+
+- sessao local simples em React Context
+- API REST com axios
+- armazenamento local para fallback
+- backend serverless proprio em `api/`
+
+## Como rodar localmente
 
 ```bash
 npm install
 npm run dev
 ```
 
-Sem backend configurado, o app funciona com fallback local no navegador.
+Abra o projeto em:
 
-## Backend web
+```bash
+http://localhost:5173
+```
 
-As funcoes serverless ficam em `api/` e usam Upstash Redis.
+Se o backend nao estiver configurado, o app continua funcionando localmente no navegador com persistencia local.
 
-Variaveis necessarias no deploy:
+## Variaveis de ambiente
+
+Para frontend + backend web:
 
 ```bash
 VITE_SKYBOUNCE_API_URL=/api
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
 ```
+
+Se quiser usar apenas o frontend localmente, a API pode ficar sem configuracao e o fallback local sera usado.
+
+## API web
+
+As funcoes serverless ficam em `api/` e foram preparadas para Vercel.
 
 Endpoints:
 
@@ -45,13 +108,43 @@ Endpoints:
 ## Deploy web no Vercel
 
 1. Importe o repositorio no Vercel.
-2. Configure as variaveis do arquivo `.env.example`.
-3. Faca o deploy.
+2. Configure as variaveis de ambiente.
+3. Faça o deploy.
 
-O arquivo `vercel.json` ja inclui rewrite para SPA, entao rotas como `/shop`, `/leaderboard` e `/stats` continuam funcionando.
+O arquivo `vercel.json` ja inclui rewrite para SPA, entao as rotas `/shop`, `/leaderboard` e `/stats` continuam funcionando corretamente no deploy.
 
-## Build
+## Build de producao
 
 ```bash
 npm run build
+npm run preview
 ```
+
+## Estrutura principal
+
+```text
+src/
+  api/
+  app/
+  components/
+    game/
+    layout/
+  context/
+  hooks/
+  lib/
+  pages/
+  styles/
+api/
+  health.js
+  profile.js
+  leaderboard.js
+  leaderboard/
+    runs.js
+```
+
+## Proximos passos recomendados
+
+- conectar IAP e anuncios reais para mobile
+- substituir o audio sintetizado por assets royalty-free finais
+- reforcar validacoes do backend para leaderboard em producao
+- publicar um deploy web ativo no Vercel
