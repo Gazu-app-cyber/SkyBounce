@@ -24,3 +24,13 @@ export async function postRun(run) {
   const { data } = await http.post('/leaderboard/runs', run)
   return data
 }
+
+export async function createCheckoutSession(payload) {
+  const { data } = await http.post('/checkout/create-session', payload)
+  return data
+}
+
+export async function verifyCheckoutSession(payload) {
+  const { data } = await http.post('/checkout/verify-session', payload)
+  return data
+}

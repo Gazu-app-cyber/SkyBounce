@@ -49,6 +49,7 @@ As rotas de modal funcionam com React Router e preservam o fluxo de voltar do na
 - audio sintetizado via Web Audio API
 - persistencia local com sincronizacao via API quando disponivel
 - fallback local para uso sem backend configurado
+- checkout web real com Stripe para remover anuncios
 
 ## Substituicoes do Base44
 
@@ -88,6 +89,9 @@ Para frontend + backend web:
 VITE_SKYBOUNCE_API_URL=/api
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
+STRIPE_SECRET_KEY=...
+STRIPE_REMOVE_ADS_PRICE_BRL=499
+VITE_APP_URL=http://localhost:5173
 ```
 
 Se quiser usar apenas o frontend localmente, a API pode ficar sem configuracao e o fallback local sera usado.
@@ -104,6 +108,25 @@ Endpoints:
 - `DELETE /api/profile?playerId=...`
 - `GET /api/leaderboard?scope=global|weekly&playerId=...`
 - `POST /api/leaderboard/runs`
+- `POST /api/checkout/create-session`
+- `POST /api/checkout/verify-session`
+
+## Pagamento web
+
+A compra `Remover Anuncios` agora usa Stripe Checkout em modo de pagamento unico.
+
+Fluxo:
+
+1. o jogador inicia a compra no modal
+2. o backend cria uma Checkout Session
+3. o Stripe redireciona o usuario para pagamento
+4. ao voltar para o jogo, a sessao e validada no servidor
+5. o perfil do jogador recebe `adFree = true`
+
+Observacao importante:
+
+- no estado atual, a restauracao depende do `playerId` salvo na sessao local do navegador
+- para restauracao entre dispositivos, navegadores limpos ou reinstalacoes completas, o ideal e evoluir a autenticacao para conta real com identificador estavel e, idealmente, webhook do Stripe
 
 ## Deploy web no Vercel
 

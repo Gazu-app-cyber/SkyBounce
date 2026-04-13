@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell.jsx'
 import AdBanner from '../components/game/AdBanner.jsx'
 import AdOverlay from '../components/game/AdOverlay.jsx'
@@ -27,8 +27,18 @@ function getWeekKey() {
 export default function GamePage() {
   const { session, signOut } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { currentModal, openModal, closeModal } = useRouterModal()
-  const { profile, loading, deleteState, updateProfile, submitRun, completeRealPurchase, deleteAccount } = usePlayerProfile(session)
+  const {
+    profile,
+    loading,
+    deleteState,
+    updateProfile,
+    submitRun,
+    startCheckout,
+    verifyPurchase,
+    deleteAccount,
+  } = usePlayerProfile(session)
   const audio = useAudio()
   const [gameState, setGameState] = useState('idle')
   const [score, setScore] = useState(0)
@@ -40,10 +50,13 @@ export default function GamePage() {
   const [showIap, setShowIap] = useState(false)
   const [showAd, setShowAd] = useState(null)
   const [shopTab, setShopTab] = useState('skins')
+  const [iapProcessing, setIapProcessing] = useState(false)
+  const [checkoutMessage, setCheckoutMessage] = useState('')
   const pendingActionRef = useRef(null)
   const startTimeRef = useRef(null)
   const timerRef = useRef(null)
   const soundOnRef = useRef(true)
+  const processedCheckoutRef = useRef('')
 
   useEffect(() => { soundOnRef.current = soundOn }, [soundOn])
 
@@ -121,6 +134,45 @@ export default function GamePage() {
     audio.stopMusic()
   }, [audio, stopTimer])
 
+  useEffect(() => {
+    if (!profile) {
+      return
+    }
+
+    const checkoutStatus = searchParams.get('checkout')
+    const sessionId = searchParams.get('session_id')
+    const sessionKey = `${checkoutStatus ?? ''}:${sessionId ?? ''}`
+
+    if (!checkoutStatus || processedCheckoutRef.current === sessionKey) {
+      return
+    }
+
+    processedCheckoutRef.current = sessionKey
+
+    if (checkoutStatus === 'cancelled') {
+      setCheckoutMessage('Compra cancelada.')
+      setShowIap(false)
+      setSearchParams({}, { replace: true })
+      return
+    }
+
+    if (checkoutStatus === 'success' && sessionId) {
+      setIapProcessing(true)
+      verifyPurchase(sessionId)
+        .then(() => {
+          setCheckoutMessage('Compra confirmada. Anuncios removidos.')
+          setShowIap(false)
+        })
+        .catch(() => {
+          setCheckoutMessage('Nao foi possivel confirmar a compra agora.')
+        })
+        .finally(() => {
+          setIapProcessing(false)
+          setSearchParams({}, { replace: true })
+        })
+    }
+  }, [profile, searchParams, setSearchParams, verifyPurchase])
+
   if (loading) return <div className="screen-loader">Carregando jogo...</div>
 
   const activeMap = profile?.selectedMap || 'space'
@@ -156,7 +208,7 @@ export default function GamePage() {
                 <div className="theme-pill">{themeConfig.emoji} {themeConfig.name}</div>
               </div>
               <div className="menu-center">
-                <button className="play-button" onClick={startGame}>▶</button>
+                <button className="play-button" onClick={startGame}>Play</button>
                 <div className="subtle-text">Recorde: <strong>{profile?.bestScore || 0}</strong></div>
               </div>
               <div className="menu-actions">
@@ -233,7 +285,10 @@ export default function GamePage() {
           }}
           onSelectSkin={(skinId) => updateProfile({ selectedSkin: skinId }).catch(() => null)}
           onSelectMap={(mapId) => updateProfile({ selectedMap: mapId }).catch(() => null)}
-          onOpenIAP={() => setShowIap(true)}
+          onOpenIAP={() => {
+            setCheckoutMessage('')
+            setShowIap(true)
+          }}
         />
         <LeaderboardModal open={currentModal === 'leaderboard'} onClose={closeModal} playerId={profile?.playerId} playerName={profile?.name} />
         <StatsModal
@@ -252,12 +307,32 @@ export default function GamePage() {
         />
         <IAPModal
           open={showIap}
-          onClose={() => setShowIap(false)}
-          onPurchaseComplete={async () => {
-            await completeRealPurchase('remove_ads').catch(() => null)
-            setShowIap(false)
+          onClose={() => {
+            if (!iapProcessing) {
+              setShowIap(false)
+            }
           }}
-          processing={false}
+          onPurchaseComplete={async () => {
+            if (!profile || iapProcessing) {
+              return
+            }
+
+            setIapProcessing(true)
+            setCheckoutMessage('')
+
+            try {
+              const checkout = await startCheckout('remove_ads')
+              if (checkout?.checkoutUrl) {
+                window.location.assign(checkout.checkoutUrl)
+                return
+              }
+            } catch {
+              setCheckoutMessage('Nao foi possivel iniciar o pagamento agora.')
+            } finally {
+              setIapProcessing(false)
+            }
+          }}
+          processing={iapProcessing}
         />
         {showAd ? (
           <AdOverlay
@@ -274,6 +349,7 @@ export default function GamePage() {
           />
         ) : null}
         {deleteState.loading ? <div className="toast-message">Excluindo conta...</div> : null}
+        {checkoutMessage ? <div className="toast-message">{checkoutMessage}</div> : null}
       </main>
     </AppShell>
   )

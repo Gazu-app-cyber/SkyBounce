@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getLeaderboard, getProfile, postRun, removeProfile, saveProfile } from '../api/gameApi'
+import {
+  createCheckoutSession,
+  getLeaderboard,
+  getProfile,
+  postRun,
+  removeProfile,
+  saveProfile,
+  verifyCheckoutSession,
+} from '../api/gameApi'
 import { getPurchases, loadCachedProfile, saveCachedProfile, savePurchases, clearCachedProfile } from '../lib/storage'
 
 function defaultProfile(session) {
@@ -142,6 +150,41 @@ export default function usePlayerProfile(session) {
     return updateProfile({ adFree: true })
   }, [updateProfile])
 
+  const startCheckout = useCallback(async (productId) => {
+    if (!profileRef.current) {
+      throw new Error('missing_profile')
+    }
+
+    const response = await createCheckoutSession({
+      playerId: profileRef.current.playerId,
+      name: profileRef.current.name,
+      productId,
+    })
+
+    if (response.alreadyOwned) {
+      return completeRealPurchase(productId)
+    }
+
+    return response
+  }, [completeRealPurchase])
+
+  const verifyPurchase = useCallback(async (sessionId) => {
+    if (!profileRef.current) {
+      throw new Error('missing_profile')
+    }
+
+    const response = await verifyCheckoutSession({
+      sessionId,
+      playerId: profileRef.current.playerId,
+    })
+
+    if (response.ok && response.productId === 'remove_ads') {
+      return completeRealPurchase('remove_ads')
+    }
+
+    throw new Error('purchase_not_verified')
+  }, [completeRealPurchase])
+
   const deleteAccount = useCallback(async () => {
     if (!profileRef.current) {
       return
@@ -168,6 +211,8 @@ export default function usePlayerProfile(session) {
     updateProfile,
     submitRun,
     completeRealPurchase,
+    startCheckout,
+    verifyPurchase,
     deleteAccount,
   }
 }

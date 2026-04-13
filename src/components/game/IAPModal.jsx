@@ -17,8 +17,9 @@ export default function IAPModal({ open, onClose, onPurchaseComplete, processing
             <span>Sem banners, sem intersticiais e com restauracao futura.</span>
           </div>
           <button className="button button-primary" onClick={onPurchaseComplete} disabled={processing}>
-            {processing ? 'Processando...' : 'Comprar Agora'}
+            {processing ? 'Abrindo Checkout...' : 'Comprar Agora'}
           </button>
+          <span className="subtle-text">Pagamento real processado via Stripe Checkout.</span>
         </div>
       </div>
     </div>
