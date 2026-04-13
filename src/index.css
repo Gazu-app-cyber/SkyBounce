@@ -1,7 +1,11 @@
+@import './styles/app.css';
+@import './styles/game.css';
+@import './styles/modals.css';
+
 :root {
-  font-family: 'Trebuchet MS', 'Avenir Next', sans-serif;
-  color: #f7fbff;
-  background: #060912;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #f8fafc;
+  background: #070913;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,7 +25,13 @@ body,
 
 body {
   min-height: 100svh;
-  background: #060912;
+  background: #070913;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
 }
 
 button,
@@ -29,6 +39,6 @@ input {
   font: inherit;
 }
 
-button {
-  cursor: pointer;
+a {
+  color: inherit;
 }

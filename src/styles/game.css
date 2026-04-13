@@ -1,0 +1,140 @@
+.game-page {
+  min-height: 100svh;
+  width: min(100%, 480px);
+  margin: 0 auto;
+  padding: 16px 16px calc(100px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.game-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+}
+
+.game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.score-display {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: calc(16px + env(safe-area-inset-top)) 16px 8px;
+  pointer-events: none;
+}
+
+.score-display strong {
+  display: block;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.coin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.36);
+  padding: 10px 14px;
+  border-radius: 999px;
+}
+
+.menu-overlay {
+  position: absolute;
+  inset: 0;
+  padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(5, 7, 15, 0.1), rgba(5, 7, 15, 0.92) 60%);
+}
+
+.menu-header,
+.menu-center {
+  text-align: center;
+}
+
+.menu-header h1 {
+  font-size: clamp(2.4rem, 8vw, 4rem);
+}
+
+.theme-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.play-button {
+  width: 84px;
+  height: 84px;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: white;
+  font-size: 2rem;
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.5);
+}
+
+.menu-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.menu-icon-button {
+  border-radius: 18px;
+  padding: 14px 10px;
+  background: rgba(17, 24, 39, 0.82);
+  color: #f8fafc;
+}
+
+.ad-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(100%, 480px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(15, 23, 38, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+}
+
+.ad-badge {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+  font-weight: 700;
+}
+
+.toast-message {
+  position: fixed;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  background: rgba(17, 24, 39, 0.96);
+  padding: 10px 14px;
+  border-radius: 999px;
+}
